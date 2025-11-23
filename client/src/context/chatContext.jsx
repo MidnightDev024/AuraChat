@@ -68,6 +68,9 @@ export const ChatProvider = ({ children }) => {
     // update single message in state
     const updateMessage = (id, newFields) => setMessages(prev => prev.map(m => m._id === id ? {...m, ...newFields} : m));
 
+    // Notification icon constant
+    const NOTIFICATION_ICON = "/logo_icon.svg";
+
     // function to show browser notification for new message
     const showNotification = (senderName, messageText, messageImage) => {
         // Check if browser supports notifications
@@ -82,13 +85,19 @@ export const ChatProvider = ({ children }) => {
             
             const notification = new Notification(notificationTitle, {
                 body: notificationBody,
-                icon: "/logo_icon.svg",
+                icon: NOTIFICATION_ICON,
                 tag: "aurachat-message",
-                badge: "/logo_icon.svg"
+                badge: NOTIFICATION_ICON
             });
 
-            // Close notification after 5 seconds
-            setTimeout(() => notification.close(), 5000);
+            // Close notification after 5 seconds if not already closed
+            setTimeout(() => {
+                try {
+                    notification.close();
+                } catch (error) {
+                    // Notification may have already been closed by user
+                }
+            }, 5000);
         }
     };
 
