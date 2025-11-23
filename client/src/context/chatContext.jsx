@@ -14,6 +14,9 @@ export const ChatProvider = ({ children }) => {
 
     const { socket, axios } = useContext(authContext);
 
+    // Notification icon constant
+    const NOTIFICATION_ICON = "/logo_icon.svg";
+
     // function to get all users from sidebar
     const getUsers = async () => {
         try {
@@ -101,6 +104,38 @@ export const ChatProvider = ({ children }) => {
             socket.off("messageUpdated");
         }
     };
+
+    // function to show browser notification for new message
+const showNotification = (senderName, messageText, messageImage) => {
+    if (!("Notification" in window)) return;
+    
+    if (Notification.permission === "granted") {
+        const notificationTitle = senderName || "New Message";
+        const notificationBody = messageImage ? "Sent an image" : (messageText || "New message received");
+        
+        const notification = new Notification(notificationTitle, {
+            body: notificationBody,
+            icon: NOTIFICATION_ICON,
+            tag: "aurachat-message",
+            badge: NOTIFICATION_ICON
+        });
+
+        setTimeout(() => {
+            try {
+                notification.close();
+            } catch (error) {
+                // Notification may have already been closed by user
+            }
+        }, 5000);
+    }
+};
+
+    // function to request notification permission
+const requestNotificationPermission = () => {
+    if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+    }
+};
 
     useEffect(() => {
         subscribeToMessages();
