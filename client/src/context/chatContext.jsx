@@ -80,6 +80,13 @@ export const ChatProvider = ({ children }) => {
                 setMessages((prevMessages) => [...prevMessages, newMessage]);
                 axios.put(`/api/messages/mark/${newMessage._id}`);
             } else {
+                // Find sender info from users list to get their name
+                const sender = users.find(u => u._id === newMessage.senderId);
+                const senderName = sender?.fullName || sender?.fullname || "Someone";
+                
+                // Show browser notification
+                showNotification(senderName, newMessage.text, newMessage.image);
+
                 setUnseenMessages((prevUnseenMessages) => ({
                     ...prevUnseenMessages,
                     [newMessage.senderId]: prevUnseenMessages[newMessage.senderId] ? prevUnseenMessages[newMessage.senderId] + 1 : 1
@@ -106,43 +113,48 @@ export const ChatProvider = ({ children }) => {
     };
 
     // function to show browser notification for new message
-const showNotification = (senderName, messageText, messageImage) => {
+    const showNotification = (senderName, messageText, messageImage) => {
     if (!("Notification" in window)) return;
     
-    if (Notification.permission === "granted") {
-        const notificationTitle = senderName || "New Message";
-        const notificationBody = messageImage ? "Sent an image" : (messageText || "New message received");
+        if (Notification.permission === "granted") {
+            const notificationTitle = senderName || "New Message";
+            const notificationBody = messageImage ? "Sent an image" : (messageText || "New message received");
         
-        const notification = new Notification(notificationTitle, {
-            body: notificationBody,
-            icon: NOTIFICATION_ICON,
-            tag: "aurachat-message",
-            badge: NOTIFICATION_ICON
-        });
+            const notification = new Notification(notificationTitle, {
+                body: notificationBody,
+                icon: NOTIFICATION_ICON,
+                tag: "aurachat-message",
+                badge: NOTIFICATION_ICON
+            });
 
-        setTimeout(() => {
-            try {
-                notification.close();
-            } catch (error) {
-                // Notification may have already been closed by user
-            }
-        }, 5000);
-    }
-};
+            setTimeout(() => {
+                try {
+                    notification.close();
+                } catch (error) {
+                    // Notification may have already been closed by user
+                }
+            }, 5000);
+        }
+    };
 
     // function to request notification permission
-const requestNotificationPermission = () => {
+    const requestNotificationPermission = () => {
     if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
     }
-};
+    };
+
+    // Request notification permission on mount
+    useEffect(() => {
+    requestNotificationPermission();
+    }, []);
 
     useEffect(() => {
         subscribeToMessages();
         return () => {
             unsubscribeFromMessages();
         };
-    }, [socket, selectedUser]);
+    }, [socket, selectedUser, users]);
 
     // const value = {
         // messages,
