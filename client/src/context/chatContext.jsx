@@ -68,6 +68,56 @@ export const ChatProvider = ({ children }) => {
     // update single message in state
     const updateMessage = (id, newFields) => setMessages(prev => prev.map(m => m._id === id ? {...m, ...newFields} : m));
 
+    // Notification icon constant
+    const NOTIFICATION_ICON = "/logo_icon.svg";
+
+    // function to show browser notification for new message
+    const showNotification = (senderName, messageText, messageImage) => {
+        // Check if browser supports notifications
+        if (!("Notification" in window)) {
+            console.log("Browser doesn't support notifications");
+            return;
+        }
+
+        // Check if permission is granted
+        if (Notification.permission === "granted") {
+            const notificationTitle = senderName || "New Message";
+            const notificationBody = messageImage ? "Sent an image" : (messageText || "New message received");
+            
+            const notification = new Notification(notificationTitle, {
+                body: notificationBody,
+                icon: NOTIFICATION_ICON,
+                tag: "aurachat-message",
+                badge: NOTIFICATION_ICON
+            });
+
+            // Close notification after 5 seconds if not already closed
+            setTimeout(() => {
+                try {
+                    notification.close();
+                } catch (error) {
+                    // Notification may have already been closed by user
+                }
+            }, 5000);
+        } else if (Notification.permission === "default") {
+            // If permission not yet requested, request it
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    showNotification(senderName, messageText, messageImage);
+                }
+            });
+        }
+    };
+
+    // function to request notification permission
+    const requestNotificationPermission = () => {
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission().then(permission => {
+                console.log("Notification permission:", permission);
+            });
+        }
+    };
+
     // function to subscribe to message for selected user
     const subscribeToMessages = () => {
         if (!socket) return;
@@ -77,6 +127,13 @@ export const ChatProvider = ({ children }) => {
                 setMessages((prevMessages) => [...prevMessages, newMessage]);
                 axios.put(`/api/messages/mark/${newMessage._id}`);
             } else {
+                // Find sender info from users list to get their name
+                const sender = users.find(u => u._id === newMessage.senderId);
+                const senderName = sender?.fullName || sender?.fullname || "Someone";
+                
+                // Show browser notification
+                showNotification(senderName, newMessage.text, newMessage.image);
+                
                 setUnseenMessages((prevUnseenMessages) => ({
                     ...prevUnseenMessages,
                     [newMessage.senderId]: prevUnseenMessages[newMessage.senderId] ? prevUnseenMessages[newMessage.senderId] + 1 : 1
@@ -107,7 +164,12 @@ export const ChatProvider = ({ children }) => {
         return () => {
             unsubscribeFromMessages();
         };
-    }, [socket, selectedUser]);
+    }, [socket, selectedUser, users]);
+
+    // Request notification permission on mount
+    useEffect(() => {
+        requestNotificationPermission();
+    }, []);
 
     // const value = {
         // messages,
