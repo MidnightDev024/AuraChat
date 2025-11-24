@@ -111,15 +111,20 @@ export const ChatProvider = ({ children }) => {
             socket.off("messageUpdated");
         }
     };
-
+    
     // function to show browser notification for new message
     const showNotification = (senderName, messageText, messageImage) => {
-    if (!("Notification" in window)) return;
-    
+        // Check if browser supports notifications
+        if (!("Notification" in window)) {
+            console.log("Browser doesn't support notifications");
+            return;
+        }
+
+        // Check if permission is granted
         if (Notification.permission === "granted") {
             const notificationTitle = senderName || "New Message";
             const notificationBody = messageImage ? "Sent an image" : (messageText || "New message received");
-        
+            
             const notification = new Notification(notificationTitle, {
                 body: notificationBody,
                 icon: NOTIFICATION_ICON,
@@ -127,6 +132,7 @@ export const ChatProvider = ({ children }) => {
                 badge: NOTIFICATION_ICON
             });
 
+            // Close notification after 5 seconds if not already closed
             setTimeout(() => {
                 try {
                     notification.close();
@@ -134,15 +140,31 @@ export const ChatProvider = ({ children }) => {
                     // Notification may have already been closed by user
                 }
             }, 5000);
+        } else if (Notification.permission === "default") {
+            // If permission not yet requested, request it
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    showNotification(senderName, messageText, messageImage);
+                }
+            });
         }
     };
 
     // function to request notification permission
     const requestNotificationPermission = () => {
-    if ("Notification" in window && Notification.permission === "default") {
-        Notification.requestPermission();
-    }
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission().then(permission => {
+                console.log("Notification permission:", permission);
+            });
+        }
     };
+
+     // Find sender info from users list to get their name
+                const sender = users.find(u => u._id === unseenMessages.senderId);
+                const senderName = sender?.fullName || sender?.fullname || "Someone";
+                
+                // Show browser notification
+                showNotification(senderName, unseenMessages.text, unseenMessages.image);
 
     // Request notification permission on mount
     useEffect(() => {
@@ -155,6 +177,11 @@ export const ChatProvider = ({ children }) => {
             unsubscribeFromMessages();
         };
     }, [socket, selectedUser, users]);
+
+    // Request notification permission on mount
+    useEffect(() => {
+        requestNotificationPermission();
+    }, []);
 
     // const value = {
         // messages,
