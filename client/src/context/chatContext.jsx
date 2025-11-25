@@ -85,7 +85,7 @@ export const ChatProvider = ({ children }) => {
                 const senderName = sender?.fullName || sender?.fullname || "Someone";
                 
                 // Show browser notification
-                showNotification(senderName, newMessage.text, newMessage.image);
+                showNotification(senderName, newMessage.text, newMessage.image, newMessage.gif, newMessage.file);
 
                 setUnseenMessages((prevUnseenMessages) => ({
                     ...prevUnseenMessages,
@@ -113,7 +113,7 @@ export const ChatProvider = ({ children }) => {
     };
     
     // function to show browser notification for new message
-    const showNotification = (senderName, messageText, messageImage) => {
+    const showNotification = (senderName, messageText, messageImage, messageGif, messageFile) => {
         // Check if browser supports notifications
         if (!("Notification" in window)) {
             console.log("Browser doesn't support notifications");
@@ -123,7 +123,16 @@ export const ChatProvider = ({ children }) => {
         // Check if permission is granted
         if (Notification.permission === "granted") {
             const notificationTitle = senderName || "New Message";
-            const notificationBody = messageImage ? "Sent an image" : (messageText || "New message received");
+            let notificationBody;
+            if (messageImage) {
+                notificationBody = "Sent an image";
+            } else if (messageGif) {
+                notificationBody = "Sent a GIF";
+            } else if (messageFile) {
+                notificationBody = `Sent a file: ${messageFile.name || 'file'}`;
+            } else {
+                notificationBody = messageText || "New message received";
+            }
             
             const notification = new Notification(notificationTitle, {
                 body: notificationBody,
@@ -136,7 +145,7 @@ export const ChatProvider = ({ children }) => {
             setTimeout(() => {
                 try {
                     notification.close();
-                } catch (error) {
+                } catch {
                     // Notification may have already been closed by user
                 }
             }, 5000);
@@ -144,7 +153,7 @@ export const ChatProvider = ({ children }) => {
             // If permission not yet requested, request it
             Notification.requestPermission().then(permission => {
                 if (permission === "granted") {
-                    showNotification(senderName, messageText, messageImage);
+                    showNotification(senderName, messageText, messageImage, messageGif, messageFile);
                 }
             });
         }
@@ -158,13 +167,6 @@ export const ChatProvider = ({ children }) => {
             });
         }
     };
-
-     // Find sender info from users list to get their name
-                const sender = users.find(u => u._id === unseenMessages.senderId);
-                const senderName = sender?.fullName || sender?.fullname || "Someone";
-                
-                // Show browser notification
-                showNotification(senderName, unseenMessages.text, unseenMessages.image);
 
     // Request notification permission on mount
     useEffect(() => {

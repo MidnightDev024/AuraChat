@@ -1,9 +1,11 @@
-import React, { use, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import assets from '../assets/assets.js';
 import toast from 'react-hot-toast';
 import { formateMessageTime } from '../library/utils.js';
 import { chatContext } from "../context/chatContext.jsx";
 import { authContext } from '../context/authContext.jsx';
+import EmojiPicker from './EmojiPicker.jsx';
+import GifPicker from './GifPicker.jsx';
 
 const ChatContainer = () => {
 
@@ -17,13 +19,17 @@ const ChatContainer = () => {
 
   const headerMenuRef = useRef();
 
-  const [input, setInput] = React.useState('');
+  const [input, setInput] = useState('');
 
-  const [hoveredMessageId, setHoveredMessageId] = React.useState(null);
+  const [hoveredMessageId, setHoveredMessageId] = useState(null);
 
-  const [showDeleteMenu, setShowDeleteMenu] = React.useState(false);
+  const [showDeleteMenu, setShowDeleteMenu] = useState(false);
 
-  const [showHeaderMenu, setShowHeaderMenu] = React.useState(false);
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
+
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  const [showGifPicker, setShowGifPicker] = useState(false);
 
   // handle send message
   const handleSendMessage = async (e) => {
@@ -38,6 +44,7 @@ const ChatContainer = () => {
     const file = e.target.files[0];
     if(!file || !file.type.startsWith('image/')){
       toast.error('Please select a valid image file');
+      return;
     }
     const reader = new FileReader();
     reader.onloadend = async () => {
@@ -45,6 +52,56 @@ const ChatContainer = () => {
       e.target.value = "";
     }
     reader.readAsDataURL(file);
+  }
+
+  // Handle emoji selection
+  const handleEmojiClick = (emoji) => {
+    setInput(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  }
+
+  // Handle GIF selection
+  const handleGifSelect = async (gifUrl) => {
+    await sendMessage({gif: gifUrl});
+    setShowGifPicker(false);
+  }
+
+  // Handle file upload
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if(!file){
+      return;
+    }
+    
+    // Max file size: 10MB
+    const maxSize = 10 * 1024 * 1024;
+    if(file.size > maxSize){
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      await sendMessage({
+        file: {
+          data: reader.result,
+          name: file.name,
+          type: file.type,
+          size: file.size
+        }
+      });
+      e.target.value = "";
+    }
+    reader.readAsDataURL(file);
+  }
+
+  // Format file size for display
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
   // Handle delete message for me
@@ -203,8 +260,26 @@ const ChatContainer = () => {
                 if(showDeleteMenu !== msg._id) setShowDeleteMenu(null);
               }}
             >
+              {/* Render message content based on type */}
               {msg.image ? (
                 <img src={msg.image} alt="" className='max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8' />
+              ) : msg.gif ? (
+                <img src={msg.gif} alt="GIF" className='max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8' />
+              ) : msg.file && msg.file.url ? (
+                <div className={`p-3 max-w-[230px] rounded-lg mb-8 bg-violet-500/30 ${!isSender ? 'rounded-bg-none' : 'rounded-bl-none'}`}>
+                  <a 
+                    href={msg.file.url} 
+                    target='_blank' 
+                    rel='noopener noreferrer'
+                    className='flex items-center gap-2 text-white hover:text-violet-300'
+                  >
+                    <img src={assets.file_icon} alt="" className='w-5 h-5' style={{filter: 'invert(1)'}} />
+                    <div className='flex-1 min-w-0'>
+                      <p className='text-sm truncate'>{msg.file.name}</p>
+                      <p className='text-xs text-gray-400'>{formatFileSize(msg.file.size)}</p>
+                    </div>
+                  </a>
+                </div>
               ) : (
                 <p className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg mb-8 break-all bg-violet-500/30 text-white ${!isSender ? 'rounded-bg-none' : 'rounded-bl-none'}`}>{msg.text}</p>
               )}
@@ -249,15 +324,57 @@ const ChatContainer = () => {
         <div ref={scrollEnd}></div>
       </div>
       {/* --------- bottom area --------- */}
-      <div className='absolute bottom-0 left-0 right-0 flex items-center gap-3 p-3'>
+      <div className='absolute bottom-0 left-0 right-0 flex items-center gap-3 p-3 relative'>
+        {/* Emoji Picker */}
+        {showEmojiPicker && (
+          <EmojiPicker 
+            onEmojiClick={handleEmojiClick} 
+            onClose={() => setShowEmojiPicker(false)} 
+          />
+        )}
+        {/* GIF Picker */}
+        {showGifPicker && (
+          <GifPicker 
+            onGifSelect={handleGifSelect} 
+            onClose={() => setShowGifPicker(false)} 
+          />
+        )}
         <div className='flex-1 flex items-center bg-gray-100/12 px-3 rounded-full'>
-          <input onChange={(e) => setInput(e.target.value)} value={input} onKeyDown={(e)=> e.key === "Enter" ? handleSendMessage(e) : null} type="text" placeholder='Sent a message...' className='flex-1 text-sm p-3 border-none rounded-lg outline-none text-white placeholder-gray-400'/>
+          {/* Emoji button */}
+          <img 
+            onClick={() => {
+              setShowEmojiPicker(!showEmojiPicker);
+              setShowGifPicker(false);
+            }} 
+            src={assets.emoji_icon} 
+            alt="Emoji" 
+            className='w-5 mr-2 cursor-pointer' 
+            style={{filter: 'invert(0.7)'}}
+          />
+          <input onChange={(e) => setInput(e.target.value)} value={input} onKeyDown={(e)=> e.key === "Enter" ? handleSendMessage(e) : null} type="text" placeholder='Send a message...' className='flex-1 text-sm p-3 border-none rounded-lg outline-none text-white placeholder-gray-400'/>
+          {/* GIF button */}
+          <img 
+            onClick={() => {
+              setShowGifPicker(!showGifPicker);
+              setShowEmojiPicker(false);
+            }} 
+            src={assets.gif_icon} 
+            alt="GIF" 
+            className='w-6 mr-2 cursor-pointer' 
+            style={{filter: 'invert(0.7)'}}
+          />
+          {/* File attachment button */}
+          <input onChange={handleFileUpload} type="file" id="file" hidden />
+          <label htmlFor="file">
+            <img src={assets.file_icon} alt="Attach file" className='w-5 mr-2 cursor-pointer' style={{filter: 'invert(0.7)'}} /> 
+          </label>
+          {/* Image button */}
           <input onChange={handleSendImage} type="file" id="image" accept='image/png, image/jpeg' hidden />
           <label htmlFor="image">
-            <img src={assets.gallery_icon} alt="" className='w-5 mr-2 cursor-pointer' /> 
+            <img src={assets.gallery_icon} alt="Image" className='w-5 mr-2 cursor-pointer' /> 
           </label>
         </div>
-        <img src={assets.send_button} alt="" className='w-7 cursor-pointer'/>
+        <img onClick={handleSendMessage} src={assets.send_button} alt="" className='w-7 cursor-pointer'/>
       </div>
     </div>
   ) : (
