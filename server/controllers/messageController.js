@@ -74,6 +74,17 @@ export const sendMessage = async (req, res) => {
 
         let fileData;
         if(file && file.data){
+            // Validate file properties
+            if(!file.name || typeof file.name !== 'string'){
+                return res.json({success: false, message: 'Invalid file name'});
+            }
+            if(!file.type || typeof file.type !== 'string'){
+                return res.json({success: false, message: 'Invalid file type'});
+            }
+            if(!file.size || typeof file.size !== 'number' || file.size <= 0){
+                return res.json({success: false, message: 'Invalid file size'});
+            }
+            
             const uploadResponse = await cloudinary.uploader.upload(file.data, {
                 resource_type: 'auto'
             });

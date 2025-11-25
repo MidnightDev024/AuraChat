@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const GIPHY_API_KEY = 'GlVGYHkr3WSBnllca54iNt0yFbjz7L65'; // Public beta key
+const GIPHY_API_KEY = 'GlVGYHkr3WSBnllca54iNt0yFbjz7L65'; // GIPHY public beta key - safe for client-side use
 
 const GifPicker = ({ onGifSelect, onClose }) => {
   const [search, setSearch] = useState('');

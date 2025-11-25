@@ -266,7 +266,7 @@ const ChatContainer = () => {
               ) : msg.gif ? (
                 <img src={msg.gif} alt="GIF" className='max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8' />
               ) : msg.file && msg.file.url ? (
-                <div className={`p-3 max-w-[230px] rounded-lg mb-8 bg-violet-500/30 ${!isSender ? 'rounded-bg-none' : 'rounded-bl-none'}`}>
+                <div className={`p-3 max-w-[230px] rounded-lg mb-8 bg-violet-500/30 ${!isSender ? 'rounded-br-none' : 'rounded-bl-none'}`}>
                   <a 
                     href={msg.file.url} 
                     target='_blank' 
@@ -281,7 +281,7 @@ const ChatContainer = () => {
                   </a>
                 </div>
               ) : (
-                <p className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg mb-8 break-all bg-violet-500/30 text-white ${!isSender ? 'rounded-bg-none' : 'rounded-bl-none'}`}>{msg.text}</p>
+                <p className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg mb-8 break-all bg-violet-500/30 text-white ${!isSender ? 'rounded-br-none' : 'rounded-bl-none'}`}>{msg.text}</p>
               )}
               
               {/* Delete Menu Button */}
