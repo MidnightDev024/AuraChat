@@ -1,9 +1,12 @@
-import React, { use, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import assets from '../assets/assets.js';
 import toast from 'react-hot-toast';
 import { formateMessageTime } from '../library/utils.js';
 import { chatContext } from "../context/chatContext.jsx";
 import { authContext } from '../context/authContext.jsx';
+import EmojiPicker from 'emoji-picker-react';
+import { GiphyFetch } from '@giphy/js-fetch-api';
+import { Grid } from '@giphy/react-components';
 
 const ChatContainer = () => {
 
@@ -25,6 +28,13 @@ const ChatContainer = () => {
 
   const [showHeaderMenu, setShowHeaderMenu] = React.useState(false);
 
+  const [showEmojiPicker, setShowEmojiPicker] = React.useState(false);
+
+  const emojiPickerRef = useRef();
+
+  const gf = new GiphyFetch('YOUR_GIPHY_API_KEY'); // Get from developers.giphy.com
+  const [showGifPicker, setShowGifPicker] = React.useState(false);
+
   // handle send message
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -32,6 +42,11 @@ const ChatContainer = () => {
     await sendMessage({text : input.trim()});
     setInput("");
   }
+
+  // Handle emoji selection
+  const handleEmojiClick = (emojiData) => {
+    setInput(prev => prev + emojiData.emoji);
+  }  
 
   // Handle sending an image
   const handleSendImage = async (e) => {
@@ -94,13 +109,17 @@ const ChatContainer = () => {
   // Close header menu on outside click
   useEffect(() => {
     const  handleClickOutside = (event) => {
-      if (showHeaderMenu && headerMenuRef.current && !headerMenuRef.current.constains(event.target)) {
+      if (showHeaderMenu && headerMenuRef.current && !headerMenuRef.current.contains(event.target)) {
         setShowHeaderMenu(false);
+      }
+      // Close emoji picker when clicking outside
+      if (showEmojiPicker && emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+        setShowEmojiPicker(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showHeaderMenu]);
+  }, [showHeaderMenu, showEmojiPicker]);
 
   return selectedUser ?  (
       <div className='h-full overflow-scroll relative' style={{ backgroundImage: `url(${assets.chatBg})`, backgroundSize: 'cover' }}> {/* add image.png in background for ChatContainer */}
