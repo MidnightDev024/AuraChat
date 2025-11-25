@@ -62,7 +62,7 @@ export const markMessagesAsSeen = async (req, res) => {
 // send message to selected user
 export const sendMessage = async (req, res) => {
     try {
-        const {text, image} = req.body;
+        const {text, image, gif, file} = req.body;
         const receiverId = req.params.id;
         const senderId = req.user._id;
 
@@ -71,11 +71,27 @@ export const sendMessage = async (req, res) => {
             const uploadResponse = await cloudinary.uploader.upload(image);
             imageURL = uploadResponse.secure_url;
         }
+
+        let fileData;
+        if(file && file.data){
+            const uploadResponse = await cloudinary.uploader.upload(file.data, {
+                resource_type: 'auto'
+            });
+            fileData = {
+                url: uploadResponse.secure_url,
+                name: file.name,
+                type: file.type,
+                size: file.size
+            };
+        }
+
         const newMessage = await Message.create({
             senderId,
             receiverId,
             text,
-            image: imageURL
+            image: imageURL,
+            gif,
+            file: fileData
         })
 
         // emit the message to receiver if online

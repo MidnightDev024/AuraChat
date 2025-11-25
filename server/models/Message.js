@@ -5,6 +5,13 @@ const messageSchema = new mongoose.Schema({
     receiverId: {type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
     text: {type: String},
     image: {type: String},
+    gif: {type: String}, // GIF URL from GIPHY
+    file: {
+        url: {type: String},
+        name: {type: String},
+        type: {type: String},
+        size: {type: Number}
+    },
     seen: {type: Boolean, default: false},
     deletedFor: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
 }, {
