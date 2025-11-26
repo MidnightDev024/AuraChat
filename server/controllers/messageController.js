@@ -5,6 +5,9 @@ import cloudinary from "../lib/cloudinary.js";
 import {io, userSocketMap} from "../server.js";
 import { sendPushNotification } from "../lib/webPush.js";
 
+// Notification icon path (configurable via environment variable)
+const NOTIFICATION_ICON = process.env.NOTIFICATION_ICON || '/logo_icon.svg';
+
 export const getUsersForSidebar = async (req, res)=> {
     try {
         const userId = req.user._id
@@ -95,7 +98,7 @@ export const sendMessage = async (req, res) => {
                     await sendPushNotification(receiver.pushSubscription, {
                         title: senderName,
                         body: notificationBody,
-                        icon: '/logo_icon.svg',
+                        icon: NOTIFICATION_ICON,
                         data: {
                             senderId: senderId.toString(),
                             messageId: newMessage._id.toString()

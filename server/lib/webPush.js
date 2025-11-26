@@ -4,10 +4,11 @@ import webpush from 'web-push';
 // In production, these should be generated once and stored as environment variables
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+const vapidEmail = process.env.VAPID_EMAIL || 'mailto:support@aurachat.com';
 
 if (vapidPublicKey && vapidPrivateKey) {
     webpush.setVapidDetails(
-        'mailto:support@aurachat.com',
+        vapidEmail,
         vapidPublicKey,
         vapidPrivateKey
     );

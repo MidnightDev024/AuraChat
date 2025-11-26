@@ -43,7 +43,15 @@ export const AuthProvider = ({ children }) => {
             console.log('Service Worker registered');
 
             // Get VAPID public key from server
-            const { data: keyData } = await axios.get('/api/auth/vapid-key');
+            let keyData;
+            try {
+                const response = await axios.get('/api/auth/vapid-key');
+                keyData = response.data;
+            } catch (keyError) {
+                console.log('Failed to fetch VAPID key:', keyError.message);
+                return;
+            }
+            
             if (!keyData.success || !keyData.publicKey) {
                 console.log('VAPID key not available');
                 return;
@@ -63,8 +71,16 @@ export const AuthProvider = ({ children }) => {
             });
 
             // Send subscription to server
-            await axios.post('/api/auth/push-subscription', { subscription });
-            console.log('Push notification subscription saved');
+            try {
+                const saveResponse = await axios.post('/api/auth/push-subscription', { subscription });
+                if (saveResponse.data.success) {
+                    console.log('Push notification subscription saved');
+                } else {
+                    console.log('Failed to save push subscription:', saveResponse.data.message);
+                }
+            } catch (saveError) {
+                console.log('Failed to save push subscription:', saveError.message);
+            }
         } catch (error) {
             console.error('Error setting up push notifications:', error);
         }

@@ -116,6 +116,11 @@ export const savePushSubscription = async (req, res) => {
             return res.json({success: false, message: "Subscription data required"});
         }
         
+        // Validate subscription structure
+        if (!subscription.endpoint || !subscription.keys?.auth || !subscription.keys?.p256dh) {
+            return res.json({success: false, message: "Invalid subscription format"});
+        }
+        
         await User.findByIdAndUpdate(userId, {pushSubscription: subscription});
         res.json({success: true, message: "Push subscription saved"});
     } catch (error) {
