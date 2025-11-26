@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect, useRef } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
@@ -28,6 +28,9 @@ export const AuthProvider = ({ children }) => {
     const [authUser, setAuthUser] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [socket, setSocket] = useState(null);
+
+    // Ref to track the actual socket instance for connection checks
+    const socketRef = useRef(null);
 
     // Register service worker and subscribe to push notifications
     const registerPushNotifications = async () => {
@@ -132,14 +135,16 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             console.log('Error removing push subscription:', error.message);
         }
-        
+
         localStorage.removeItem("token");
         setToken(null);
         setAuthUser(null);
         setOnlineUsers([]);
         axios.defaults.headers.common["token"] = null;
         toast.success("Logged out successfully");
-        socket?.disconnect();
+        socketRef.current?.disconnect();
+        socketRef.current = null;
+        setSocket(null);
     }
 
     // Update profile function to update user data
@@ -172,15 +177,18 @@ export const AuthProvider = ({ children }) => {
 
     // connect socket function to handle socket connection and online users update
     const connectSocket = (userData) => {
-        if(!userData || socket?.connected) return;
+        if(!userData) return;
+        // Use ref to check connection status to avoid stale closure
+        if(socketRef.current?.connected) return;
+
         const newSocket = io(backendURL, {
             query: { 
                 userId: userData._id 
             }
         });
         newSocket.connect();
+        socketRef.current = newSocket;
         setSocket(newSocket);
-        
         newSocket.on("getOnlineUsers", (userIds) => {
             setOnlineUsers(userIds);
         });
