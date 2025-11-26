@@ -17,7 +17,7 @@ export const ChatProvider = ({ children }) => {
     // Refs to access current values in socket callbacks without re-subscribing
     const selectedUserRef = useRef(selectedUser);
     const usersRef = useRef(users);
-    const socketRef = useRef(socket);
+    const socketRef = useRef(null);
 
     // Keep refs in sync with state
     useEffect(() => {
