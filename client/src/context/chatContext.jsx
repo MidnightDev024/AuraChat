@@ -17,6 +17,7 @@ export const ChatProvider = ({ children }) => {
     // Refs to access current values in socket callbacks without re-subscribing
     const selectedUserRef = useRef(selectedUser);
     const usersRef = useRef(users);
+    const socketRef = useRef(socket);
 
     // Keep refs in sync with state
     useEffect(() => {
@@ -26,6 +27,10 @@ export const ChatProvider = ({ children }) => {
     useEffect(() => {
         usersRef.current = users;
     }, [users]);
+
+    useEffect(() => {
+        socketRef.current = socket;
+    }, [socket]);
 
     // Notification icon constant
     const NOTIFICATION_ICON = "/logo_icon.svg";
@@ -85,9 +90,10 @@ export const ChatProvider = ({ children }) => {
     const updateMessage = (id, newFields) => setMessages(prev => prev.map(m => m._id === id ? {...m, ...newFields} : m));
 
     // function to subscribe to message for selected user
-    const subscribeToMessages = () => {
-        if (!socket) return;
-        socket.on("newMessage", (newMessage) => {
+    const subscribeToMessages = (currentSocket) => {
+        if (!currentSocket) return;
+        
+        currentSocket.on("newMessage", (newMessage) => {
             const currentSelectedUser = selectedUserRef.current;
             const currentUsers = usersRef.current || [];
             
@@ -110,21 +116,21 @@ export const ChatProvider = ({ children }) => {
             }
         })
 
-        socket.on('messageDeleted', ({ messageId }) => {
+        currentSocket.on('messageDeleted', ({ messageId }) => {
             setMessages(prev => prev.filter(m => m._id !== messageId));
         });
 
-        socket.on('messageUpdated', (updatedMessage) => {
+        currentSocket.on('messageUpdated', (updatedMessage) => {
             setMessages(prev => prev.map(m => m._id === updatedMessage._id ? updatedMessage : m));
         });
     };
 
     // function to unsubscribe from messages
-    const unsubscribeFromMessages = () => {
-        if (socket) {
-            socket.off("newMessage");
-            socket.off("messageDeleted");
-            socket.off("messageUpdated");
+    const unsubscribeFromMessages = (currentSocket) => {
+        if (currentSocket) {
+            currentSocket.off("newMessage");
+            currentSocket.off("messageDeleted");
+            currentSocket.off("messageUpdated");
         }
     };
     
@@ -181,9 +187,13 @@ export const ChatProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
-        subscribeToMessages();
+        if (socket) {
+            subscribeToMessages(socket);
+        }
         return () => {
-            unsubscribeFromMessages();
+            if (socket) {
+                unsubscribeFromMessages(socket);
+            }
         };
     }, [socket]);
 
