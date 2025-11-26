@@ -89,7 +89,7 @@ export const ChatProvider = ({ children }) => {
         if (!socket) return;
         socket.on("newMessage", (newMessage) => {
             const currentSelectedUser = selectedUserRef.current;
-            const currentUsers = usersRef.current;
+            const currentUsers = usersRef.current || [];
             
             if (currentSelectedUser && newMessage.senderId === currentSelectedUser._id) {
                 newMessage.seen = true;
