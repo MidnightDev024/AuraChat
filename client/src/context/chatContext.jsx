@@ -136,7 +136,7 @@ export const ChatProvider = ({ children }) => {
             setTimeout(() => {
                 try {
                     notification.close();
-                } catch (error) {
+                } catch {
                     // Notification may have already been closed by user
                 }
             }, 5000);
@@ -159,16 +159,9 @@ export const ChatProvider = ({ children }) => {
         }
     };
 
-     // Find sender info from users list to get their name
-                const sender = users.find(u => u._id === unseenMessages.senderId);
-                const senderName = sender?.fullName || sender?.fullname || "Someone";
-                
-                // Show browser notification
-                showNotification(senderName, unseenMessages.text, unseenMessages.image);
-
     // Request notification permission on mount
     useEffect(() => {
-    requestNotificationPermission();
+        requestNotificationPermission();
     }, []);
 
     useEffect(() => {
@@ -178,27 +171,7 @@ export const ChatProvider = ({ children }) => {
         };
     }, [socket, selectedUser, users]);
 
-    // Request notification permission on mount
-    useEffect(() => {
-        requestNotificationPermission();
-    }, []);
-
-    // const value = {
-        // messages,
-        // users,
-        // selectedUser,
-        // getUsers,
-        // getMessages,
-        // sendMessage,
-        // setSelectedUser,
-        // unseenMessages,
-        // setUnseenMessages
-    // }
-
-    // return (<chatContext.Provider value={value}>
-    //     {children}
-    // </chatContext.Provider>);
-return (
+    return (
         <chatContext.Provider value={{
         messages,
         users,

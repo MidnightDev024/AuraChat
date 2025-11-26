@@ -8,12 +8,67 @@ axios.defaults.baseURL = backendURL;
 
 export const authContext = createContext();
 
+// Helper function to convert URL-safe base64 to Uint8Array
+const urlBase64ToUint8Array = (base64String) => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+};
+
 export const AuthProvider = ({ children }) => {
 
     const [token, setToken] = useState(localStorage.getItem("token") || null);
     const [authUser, setAuthUser] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [socket, setSocket] = useState(null);
+
+    // Register service worker and subscribe to push notifications
+    const registerPushNotifications = async () => {
+        // Check if service workers and push are supported
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            console.log('Push notifications not supported');
+            return;
+        }
+
+        try {
+            // Register service worker
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('Service Worker registered');
+
+            // Get VAPID public key from server
+            const { data: keyData } = await axios.get('/api/auth/vapid-key');
+            if (!keyData.success || !keyData.publicKey) {
+                console.log('VAPID key not available');
+                return;
+            }
+
+            // Request notification permission
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                console.log('Notification permission denied');
+                return;
+            }
+
+            // Subscribe to push notifications
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(keyData.publicKey)
+            });
+
+            // Send subscription to server
+            await axios.post('/api/auth/push-subscription', { subscription });
+            console.log('Push notification subscription saved');
+        } catch (error) {
+            console.error('Error setting up push notifications:', error);
+        }
+    };
 
     // check if user is authentcated and if so,set the user data and connect the socket 
     const checkAuth = async () => {
@@ -22,6 +77,8 @@ export const AuthProvider = ({ children }) => {
             if (data.success) {
                 setAuthUser(data.user);
                 connectSocket(data.user);
+                // Register push notifications after authentication
+                registerPushNotifications();
             }
         } catch (error) {
             toast.error(error.response.data.message);
@@ -40,6 +97,8 @@ export const AuthProvider = ({ children }) => {
                 setToken(data.token);
                 localStorage.setItem("token", data.token); 
                 toast.success(data.message);
+                // Register push notifications after login
+                registerPushNotifications();
             } else {
                 toast.error(data.message);
             }
@@ -51,6 +110,13 @@ export const AuthProvider = ({ children }) => {
     // Logout function to handle user logout and socket disconnection
 
     const logout = async () => {
+        // Remove push subscription from server
+        try {
+            await axios.delete('/api/auth/push-subscription');
+        } catch (error) {
+            console.log('Error removing push subscription:', error.message);
+        }
+        
         localStorage.removeItem("token");
         setToken(null);
         setAuthUser(null);

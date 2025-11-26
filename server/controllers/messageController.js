@@ -3,6 +3,7 @@ import User from "../models/user.js";
 import Message from "../models/Message.js";
 import cloudinary from "../lib/cloudinary.js";
 import {io, userSocketMap} from "../server.js";
+import { sendPushNotification } from "../lib/webPush.js";
 
 export const getUsersForSidebar = async (req, res)=> {
     try {
@@ -82,7 +83,33 @@ export const sendMessage = async (req, res) => {
         const receiverSocketId = userSocketMap[receiverId];
         if(receiverSocketId){
             io.to(receiverSocketId).emit("newMessage", newMessage);
-        }  
+        } else {
+            // User is offline, send push notification if they have a subscription
+            const receiver = await User.findById(receiverId);
+            if (receiver?.pushSubscription) {
+                const sender = await User.findById(senderId);
+                const senderName = sender?.fullname || "Someone";
+                const notificationBody = image ? "Sent an image" : (text || "New message received");
+                
+                try {
+                    await sendPushNotification(receiver.pushSubscription, {
+                        title: senderName,
+                        body: notificationBody,
+                        icon: '/logo_icon.svg',
+                        data: {
+                            senderId: senderId.toString(),
+                            messageId: newMessage._id.toString()
+                        }
+                    });
+                } catch (pushError) {
+                    // If subscription is expired, remove it
+                    if (pushError.message === 'SUBSCRIPTION_EXPIRED') {
+                        await User.findByIdAndUpdate(receiverId, {pushSubscription: null});
+                    }
+                    console.log('Push notification failed:', pushError.message);
+                }
+            }
+        }
 
         res.json({success: true, newMessage});
 

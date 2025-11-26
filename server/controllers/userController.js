@@ -2,6 +2,7 @@ import User from "../models/user.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../lib/utils.js";
 import cloudinary from "../lib/cloudinary.js";
+import { getVapidPublicKey } from "../lib/webPush.js";
 
 //  SignUp a new user
 
@@ -88,5 +89,49 @@ export const updateProfile = async (req, res) => {
     } catch (error) {
         console.log(error.message);
         res.json({success: false, message: error.message}); 
+    }
+}
+
+// Get VAPID public key for push notifications
+export const getVapidKey = async (req, res) => {
+    try {
+        const publicKey = getVapidPublicKey();
+        if (!publicKey) {
+            return res.json({success: false, message: "Push notifications not configured"});
+        }
+        res.json({success: true, publicKey});
+    } catch (error) {
+        console.log(error.message);
+        res.json({success: false, message: error.message});
+    }
+}
+
+// Save push subscription for user
+export const savePushSubscription = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { subscription } = req.body;
+        
+        if (!subscription) {
+            return res.json({success: false, message: "Subscription data required"});
+        }
+        
+        await User.findByIdAndUpdate(userId, {pushSubscription: subscription});
+        res.json({success: true, message: "Push subscription saved"});
+    } catch (error) {
+        console.log(error.message);
+        res.json({success: false, message: error.message});
+    }
+}
+
+// Remove push subscription for user
+export const removePushSubscription = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        await User.findByIdAndUpdate(userId, {pushSubscription: null});
+        res.json({success: true, message: "Push subscription removed"});
+    } catch (error) {
+        console.log(error.message);
+        res.json({success: false, message: error.message});
     }
 }
