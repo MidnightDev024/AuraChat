@@ -20,13 +20,13 @@ const ChatContainer = () => {
 
   const headerMenuRef = useRef();
 
-  const [input, setInput] = React.useState('');
+  const [input, setInput] = useState('');
 
-  const [hoveredMessageId, setHoveredMessageId] = React.useState(null);
+  const [hoveredMessageId, setHoveredMessageId] = useState(null);
 
-  const [showDeleteMenu, setShowDeleteMenu] = React.useState(false);
+  const [showDeleteMenu, setShowDeleteMenu] = useState(false);
 
-  const [showHeaderMenu, setShowHeaderMenu] = React.useState(false);
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
 
   // Dropdown 1: Emoji & GIF picker state
   const [showEmojiGifDropdown, setShowEmojiGifDropdown] = useState(false);
@@ -38,8 +38,8 @@ const ChatContainer = () => {
   const [showMediaDropdown, setShowMediaDropdown] = useState(false);
   const mediaDropdownRef = useRef();
 
-  // Giphy setup
-  const gf = new GiphyFetch('GlVGYHkr3WSBnllca54iNt0yFbjz7L65'); // Giphy API key
+  // Giphy setup - API key from environment variable
+  const gf = new GiphyFetch(import.meta.env.VITE_GIPHY_API_KEY || '');
 
   // handle send message
   const handleSendMessage = async (e) => {
