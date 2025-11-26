@@ -88,7 +88,7 @@ const LoginPage = () => {
             <textarea onChange={(e)=>setBio(e.target.value)} value={bio} rows={4} className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500' placeholder='Provide a Short bio... ' required></textarea>
           )}   
 
-          <button type='submit' className='py-3 bg-gradient-to-r from-purple-400 to-violet-600 text-white rounded-md cursor-pointer'>
+          <button type='submit' className='py-3 bg-gradient-to-r from-[#2C3E50] to-[#4CA1AF] hover:from-indigo-400 hover:to-purple-600 text-white rounded-md cursor-pointer'>
             {currState === "Sign up" ? "Create Account" : "Login Now"}
           </button>
 
