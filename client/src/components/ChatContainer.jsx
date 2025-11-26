@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import assets from '../assets/assets.js';
 import toast from 'react-hot-toast';
 import { formateMessageTime } from '../library/utils.js';
@@ -28,12 +28,18 @@ const ChatContainer = () => {
 
   const [showHeaderMenu, setShowHeaderMenu] = React.useState(false);
 
-  const [showEmojiPicker, setShowEmojiPicker] = React.useState(false);
+  // Dropdown 1: Emoji & GIF picker state
+  const [showEmojiGifDropdown, setShowEmojiGifDropdown] = useState(false);
+  const [activeEmojiGifTab, setActiveEmojiGifTab] = useState('emoji'); // 'emoji' or 'gif'
+  const [gifSearchTerm, setGifSearchTerm] = useState('');
+  const emojiGifDropdownRef = useRef();
 
-  const emojiPickerRef = useRef();
+  // Dropdown 2: Media & Files picker state
+  const [showMediaDropdown, setShowMediaDropdown] = useState(false);
+  const mediaDropdownRef = useRef();
 
-  const gf = new GiphyFetch('YOUR_GIPHY_API_KEY'); // Get from developers.giphy.com
-  const [showGifPicker, setShowGifPicker] = React.useState(false);
+  // Giphy setup
+  const gf = new GiphyFetch('GlVGYHkr3WSBnllca54iNt0yFbjz7L65'); // Giphy API key
 
   // handle send message
   const handleSendMessage = async (e) => {
@@ -46,13 +52,30 @@ const ChatContainer = () => {
   // Handle emoji selection
   const handleEmojiClick = (emojiData) => {
     setInput(prev => prev + emojiData.emoji);
-  }  
+  }
 
-  // Handle sending an image
+  // Handle GIF selection
+  const handleGifClick = async (gif, e) => {
+    e.preventDefault();
+    await sendMessage({ image: gif.images.fixed_height.url });
+    setShowEmojiGifDropdown(false);
+    setGifSearchTerm('');
+  };
+
+  // Fetch GIFs for Giphy Grid
+  const fetchGifs = (offset) => {
+    if (gifSearchTerm.trim()) {
+      return gf.search(gifSearchTerm, { offset, limit: 10 });
+    }
+    return gf.trending({ offset, limit: 10 });
+  };
+
+  // Handle sending an image from gallery
   const handleSendImage = async (e) => {
     const file = e.target.files[0];
     if(!file || !file.type.startsWith('image/')){
       toast.error('Please select a valid image file');
+      return;
     }
     const reader = new FileReader();
     reader.onloadend = async () => {
@@ -60,6 +83,31 @@ const ChatContainer = () => {
       e.target.value = "";
     }
     reader.readAsDataURL(file);
+    setShowMediaDropdown(false);
+  }
+
+  // Handle sending a file
+  const handleSendFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Check file size (limit to 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size should be less than 10MB');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      await sendMessage({ 
+        file: reader.result, 
+        fileName: file.name, 
+        fileType: file.type 
+      });
+      e.target.value = "";
+    }
+    reader.readAsDataURL(file);
+    setShowMediaDropdown(false);
   }
 
   // Handle delete message for me
@@ -112,14 +160,18 @@ const ChatContainer = () => {
       if (showHeaderMenu && headerMenuRef.current && !headerMenuRef.current.contains(event.target)) {
         setShowHeaderMenu(false);
       }
-      // Close emoji picker when clicking outside
-      if (showEmojiPicker && emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
-        setShowEmojiPicker(false);
+      // Close emoji/gif dropdown when clicking outside
+      if (showEmojiGifDropdown && emojiGifDropdownRef.current && !emojiGifDropdownRef.current.contains(event.target)) {
+        setShowEmojiGifDropdown(false);
+      }
+      // Close media dropdown when clicking outside
+      if (showMediaDropdown && mediaDropdownRef.current && !mediaDropdownRef.current.contains(event.target)) {
+        setShowMediaDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showHeaderMenu, showEmojiPicker]);
+  }, [showHeaderMenu, showEmojiGifDropdown, showMediaDropdown]);
 
   return selectedUser ?  (
       <div className='h-full overflow-scroll relative' style={{ backgroundImage: `url(${assets.chatBg})`, backgroundSize: 'cover' }}> {/* add image.png in background for ChatContainer */}
@@ -269,14 +321,139 @@ const ChatContainer = () => {
       </div>
       {/* --------- bottom area --------- */}
       <div className='absolute bottom-0 left-0 right-0 flex items-center gap-3 p-3'>
-        <div className='flex-1 flex items-center bg-gray-100/12 px-3 rounded-full'>
-          <input onChange={(e) => setInput(e.target.value)} value={input} onKeyDown={(e)=> e.key === "Enter" ? handleSendMessage(e) : null} type="text" placeholder='Sent a message...' className='flex-1 text-sm p-3 border-none rounded-lg outline-none text-white placeholder-gray-400'/>
-          <input onChange={handleSendImage} type="file" id="image" accept='image/png, image/jpeg' hidden />
-          <label htmlFor="image">
-            <img src={assets.gallery_icon} alt="" className='w-5 mr-2 cursor-pointer' /> 
-          </label>
+        {/* Dropdown 1: Emoji & GIF picker */}
+        <div className='relative' ref={emojiGifDropdownRef}>
+          <button 
+            onClick={() => {
+              setShowEmojiGifDropdown(prev => !prev);
+              setShowMediaDropdown(false);
+            }}
+            className='w-9 h-9 flex items-center justify-center bg-gray-100/12 rounded-full cursor-pointer hover:bg-gray-100/20 transition-colors'
+            title="Emoji & GIF"
+          >
+            <span className='text-xl'>😊</span>
+          </button>
+          
+          {/* Emoji & GIF Dropdown */}
+          {showEmojiGifDropdown && (
+            <div className='absolute bottom-12 left-0 bg-gray-800 rounded-lg shadow-lg z-20 overflow-hidden' style={{ width: '320px' }}>
+              {/* Tabs */}
+              <div className='flex border-b border-gray-700'>
+                <button
+                  onClick={() => setActiveEmojiGifTab('emoji')}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${activeEmojiGifTab === 'emoji' ? 'text-white bg-gray-700' : 'text-gray-400 hover:text-white hover:bg-gray-700/50'}`}
+                >
+                  😀 Emoji
+                </button>
+                <button
+                  onClick={() => setActiveEmojiGifTab('gif')}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${activeEmojiGifTab === 'gif' ? 'text-white bg-gray-700' : 'text-gray-400 hover:text-white hover:bg-gray-700/50'}`}
+                >
+                  🎬 GIF
+                </button>
+              </div>
+              
+              {/* Content */}
+              <div className='max-h-[300px] overflow-y-auto'>
+                {activeEmojiGifTab === 'emoji' ? (
+                  <EmojiPicker 
+                    onEmojiClick={handleEmojiClick} 
+                    theme="dark"
+                    width="100%"
+                    height={280}
+                    searchDisabled={false}
+                    skinTonesDisabled={false}
+                    previewConfig={{ showPreview: false }}
+                  />
+                ) : (
+                  <div className='p-2'>
+                    <input
+                      type="text"
+                      placeholder="Search GIFs..."
+                      value={gifSearchTerm}
+                      onChange={(e) => setGifSearchTerm(e.target.value)}
+                      className='w-full px-3 py-2 bg-gray-700 rounded-lg text-white text-sm placeholder-gray-400 outline-none mb-2'
+                    />
+                    <div className='h-[220px] overflow-y-auto'>
+                      <Grid 
+                        key={gifSearchTerm}
+                        width={296} 
+                        columns={2} 
+                        fetchGifs={fetchGifs}
+                        onGifClick={handleGifClick}
+                        noLink={true}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-        <img src={assets.send_button} alt="" className='w-7 cursor-pointer'/>
+
+        {/* Dropdown 2: Media & Files picker */}
+        <div className='relative' ref={mediaDropdownRef}>
+          <button 
+            onClick={() => {
+              setShowMediaDropdown(prev => !prev);
+              setShowEmojiGifDropdown(false);
+            }}
+            className='w-9 h-9 flex items-center justify-center bg-gray-100/12 rounded-full cursor-pointer hover:bg-gray-100/20 transition-colors'
+            title="Attach Files"
+          >
+            <span className='text-xl'>📎</span>
+          </button>
+          
+          {/* Media & Files Dropdown */}
+          {showMediaDropdown && (
+            <div className='absolute bottom-12 left-0 bg-gray-800 rounded-lg shadow-lg z-20 py-2 min-w-[160px]'>
+              {/* Gallery Option */}
+              <label htmlFor="gallery-image" className='flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-gray-700 cursor-pointer'>
+                <img src={assets.gallery_icon} alt="" className='w-5' />
+                <span>Gallery</span>
+              </label>
+              <input 
+                onChange={handleSendImage} 
+                type="file" 
+                id="gallery-image" 
+                accept='image/png, image/jpeg, image/gif, image/webp' 
+                hidden 
+              />
+              
+              {/* File Transfer Option */}
+              <label htmlFor="file-transfer" className='flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-gray-700 cursor-pointer'>
+                <span className='text-lg'>📄</span>
+                <span>File</span>
+              </label>
+              <input 
+                onChange={handleSendFile} 
+                type="file" 
+                id="file-transfer" 
+                hidden 
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Message Input */}
+        <div className='flex-1 flex items-center bg-gray-100/12 px-3 rounded-full'>
+          <input 
+            onChange={(e) => setInput(e.target.value)} 
+            value={input} 
+            onKeyDown={(e)=> e.key === "Enter" ? handleSendMessage(e) : null} 
+            type="text" 
+            placeholder='Send a message...' 
+            className='flex-1 text-sm p-3 border-none rounded-lg outline-none text-white placeholder-gray-400'
+          />
+        </div>
+        
+        {/* Send Button */}
+        <img 
+          src={assets.send_button} 
+          alt="Send" 
+          onClick={handleSendMessage}
+          className='w-7 cursor-pointer hover:opacity-80 transition-opacity'
+        />
       </div>
     </div>
   ) : (
