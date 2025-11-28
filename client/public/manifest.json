@@ -1,0 +1,16 @@
+{
+  "short_name": "Kanva",
+  "name": "Kanva Chat",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4F46E5",
+  "description": "Kanva — a modern realtime chat application.",
+  "icons": [
+    {
+      "src": "/src/assets/logo_big.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
