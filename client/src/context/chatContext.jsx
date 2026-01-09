@@ -187,7 +187,6 @@ export const ChatProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
-        subscribeToMessages();
         if (socket) {
             subscribeToMessages(socket);
         }
@@ -196,7 +195,7 @@ export const ChatProvider = ({ children }) => {
                 unsubscribeFromMessages(socket);
             }
         };
-    }, [ socket ]);
+    }, [socket]);
 
 return (
         <chatContext.Provider value={{
