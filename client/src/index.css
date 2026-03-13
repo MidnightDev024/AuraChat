@@ -8,3 +8,62 @@
 ::-webkit-scrollbar {
   display: none;
 }
+
+/* ─── Theme CSS Custom Properties ─────────────────────────────────── */
+
+/* Dark theme (default) */
+:root {
+  --theme-page-bg: #0f0c1a;
+  --theme-sidebar-bg: rgba(129, 133, 178, 0.1);
+  --theme-chat-bg: rgba(30, 27, 75, 0.6);
+  --theme-input-bg: rgba(241, 245, 249, 0.12);
+  --theme-text-primary: #ffffff;
+  --theme-text-secondary: #9ca3af;
+  --theme-text-muted: #6b7280;
+  --theme-border: rgba(107, 114, 128, 0.4);
+  --theme-dropdown-bg: #1f2937;
+  --theme-dropdown-hover: #374151;
+  --theme-msg-sent-bg: rgba(139, 92, 246, 0.3);
+  --theme-msg-received-bg: rgba(55, 65, 81, 0.5);
+  --theme-header-bg: rgba(40, 33, 66, 0.9);
+  --theme-avatar-border: rgba(255, 255, 255, 0.2);
+  --theme-badge-bg: rgba(139, 92, 246, 0.5);
+}
+
+/* Light theme overrides */
+[data-theme="light"] {
+  --theme-page-bg: #e8eaf6;
+  --theme-sidebar-bg: rgba(255, 255, 255, 0.82);
+  --theme-chat-bg: rgba(242, 244, 255, 0.9);
+  --theme-input-bg: rgba(0, 0, 0, 0.07);
+  --theme-text-primary: #111827;
+  --theme-text-secondary: #4b5563;
+  --theme-text-muted: #6b7280;
+  --theme-border: rgba(209, 213, 219, 0.8);
+  --theme-dropdown-bg: #f3f4f6;
+  --theme-dropdown-hover: #e5e7eb;
+  --theme-msg-sent-bg: rgba(167, 139, 250, 0.3);
+  --theme-msg-received-bg: rgba(209, 213, 219, 0.6);
+  --theme-header-bg: rgba(238, 240, 255, 0.95);
+  --theme-avatar-border: rgba(0, 0, 0, 0.12);
+  --theme-badge-bg: rgba(139, 92, 246, 0.6);
+}
+
+/* Light theme — override App page background */
+[data-theme="light"] .app-page {
+  background-image: none !important;
+  background-color: var(--theme-page-bg) !important;
+  background: linear-gradient(135deg, #c7d2fe 0%, #ddd6fe 50%, #ede9fe 100%) !important;
+}
+
+/* Light theme — skeleton pulses */
+[data-theme="light"] .animate-pulse {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Smooth theme transition on key elements */
+.app-page,
+.theme-panel,
+.theme-input {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

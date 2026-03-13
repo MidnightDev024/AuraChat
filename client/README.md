@@ -1,16 +1,71 @@
-# React + Vite
+# AuraChat 💬
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A real-time chat application built with React, Node.js, and Socket.IO.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🔐 **Authentication** — JWT-based login & signup with push notification support
+- 💬 **Real-time messaging** — Powered by Socket.IO for instant message delivery
+- 🌙 **Light / Dark theme** — Toggle between dark and light modes, persisted across sessions
+- ⚡ **Skeleton loaders** — Smooth loading states for the sidebar and message area
+- 🖼️ **Media sharing** — Send images and files in conversations
+- 😀 **Emoji & GIF picker** — Built-in emoji picker and GIPHY integration
+- 🔔 **Push notifications** — Web push notifications for messages received while the app is inactive
+- 🗑️ **Delete messages** — Delete for me or delete for everyone
+- 👁️ **Online presence** — See which users are currently online
+- 🔍 **User search** — Filter contacts in the sidebar by name
+- 📱 **Responsive** — Works on desktop and mobile
 
-## React Compiler
+## Major Differences vs [VibeChat](https://github.com/priyanshuwq/VibeChat)
 
-The React Compiler is not enabled on this template. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Feature | AuraChat | VibeChat |
+|---|---|---|
+| State management | React Context API | Zustand |
+| Push notifications | ✅ Web Push API + Service Worker | ❌ |
+| GIF support | ✅ GIPHY integration | ❌ |
+| File sharing | ✅ | ❌ |
+| Delete messages | ✅ Delete for me / for everyone | ❌ |
+| Light/Dark theme | ✅ CSS custom properties | ✅ DaisyUI themes |
+| Skeleton loaders | ✅ | ✅ |
+| Framer Motion | ✅ (NoChatSelected, ThemeToggle) | ✅ (Navbar, broader usage) |
+| UI library | Tailwind CSS v4 | Tailwind CSS v3 + DaisyUI |
+| Auth method | JWT in localStorage + header | JWT in httpOnly cookies |
+| Separate Signup page | ❌ combined Login/Signup | ✅ |
+| Settings page | ❌ | ✅ |
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+**Frontend**
+- React 19
+- Tailwind CSS v4
+- Socket.IO Client
+- Framer Motion
+- Zustand (theme store)
+- Lucide React
+- Emoji Picker React
+- GIPHY React Components
+
+**Backend**
+- Node.js + Express
+- MongoDB + Mongoose
+- Socket.IO
+- JWT Authentication
+- Web Push (VAPID)
+
+## Getting Started
+
+```bash
+# Install frontend dependencies
+cd client && npm install
+
+# Install backend dependencies
+cd ../server && npm install
+
+# Start backend
+cd server && npm run dev
+
+# Start frontend (in a separate terminal)
+cd client && npm run dev
+```
+
+Configure environment variables in `client/.env` and `server/.env` before starting.

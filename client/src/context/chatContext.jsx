@@ -11,6 +11,8 @@ export const ChatProvider = ({ children }) => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [unseenMessages, setUnseenMessages] = useState({});
     const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+    const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+    const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
     const { socket, axios } = useContext(authContext);
 
@@ -38,6 +40,7 @@ export const ChatProvider = ({ children }) => {
     // function to get all users from sidebar
     const getUsers = async () => {
         try {
+            setIsLoadingUsers(true);
             const { data } = await axios.get("/api/messages/users");
             if (data.success) {
                 setUsers(data.users);
@@ -45,18 +48,23 @@ export const ChatProvider = ({ children }) => {
             }
         } catch (error) {
             toast.error(error.message);
+        } finally {
+            setIsLoadingUsers(false);
         }
     }
 
     // function to get messages for selected user
     const getMessages = async (userId) => {
         try {
+            setIsLoadingMessages(true);
             const { data } = await axios.get(`/api/messages/${userId}`);
             if (data.success) {
                 setMessages(data.messages);
             }
         } catch (error) {
             toast.error(error.message);
+        } finally {
+            setIsLoadingMessages(false);
         }
     }
 
@@ -213,7 +221,9 @@ return (
         rightSidebarOpen,
         setRightSidebarOpen,
         removeMessage,
-        updateMessage
+        updateMessage,
+        isLoadingMessages,
+        isLoadingUsers
         }}>
             {children}
         </chatContext.Provider>
